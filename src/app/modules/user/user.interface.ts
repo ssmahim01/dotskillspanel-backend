@@ -19,8 +19,8 @@ export enum UserStatus {
 export interface IUser {
   _id?: Types.ObjectId;
 
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   fullName?: string;
 
   email: string;

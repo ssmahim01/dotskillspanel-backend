@@ -5,7 +5,7 @@ const userSchema = new Schema<IUser>(
   {
     firstName: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       minlength: 2,
       maxlength: 50,
@@ -13,7 +13,7 @@ const userSchema = new Schema<IUser>(
 
     lastName: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       minlength: 2,
       maxlength: 50,

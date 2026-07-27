@@ -28,6 +28,37 @@ const credentialLogin = catchAsync(
   },
 );
 
+const forgotPassword = catchAsync(
+  async (req: Request, res: Response) => {
+    await AuthServices.forgotPassword(req.body.email);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password reset email sent successfully.",
+      data: null,
+    });
+  },
+);
+
+const resetPassword = catchAsync(
+  async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+
+    await AuthServices.resetPassword(
+      token,
+      newPassword,
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "Password reset successfully.",
+      data: null,
+    });
+  },
+);
+
 const getNewAccessToken = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = req.cookies.refreshToken;
@@ -111,5 +142,7 @@ export const AuthControllers = {
   getNewAccessToken,
   adminChangePassword,
   logout,
+  forgotPassword,
+  resetPassword,
   changePassword,
 };

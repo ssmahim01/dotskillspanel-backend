@@ -7,3 +7,4 @@ function generateSecret(bytes = 64): string {
 
 console.log("JWT_ACCESS_SECRET =", generateSecret(64));
 console.log("JWT_REFRESH_SECRET =", generateSecret(128));
+console.log("JWT_RESET_PASSWORD_SECRET =", generateSecret(64));

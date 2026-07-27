@@ -3,7 +3,7 @@ import { AuthControllers } from "./auth.controller";
 import { checkAuth } from "../../middlewares/checkAuth";
 import { Role } from "../user/user.interface";
 import { validateRequest } from "../../middlewares/validateRequest";
-import { changePasswordZodSchema } from "./auth.validation";
+import { changePasswordZodSchema, forgotPasswordZodSchema, resetPasswordZodSchema } from "./auth.validation";
 const router = express.Router();
 
 router.post("/login", AuthControllers.credentialLogin);
@@ -14,6 +14,17 @@ router.post(
   checkAuth(...Object.values(Role)),
   validateRequest(changePasswordZodSchema),
   AuthControllers.changePassword,
+);
+router.post(
+  "/forgot-password",
+  validateRequest(forgotPasswordZodSchema),
+  AuthControllers.forgotPassword,
+);
+
+router.post(
+  "/reset-password",
+  validateRequest(resetPasswordZodSchema),
+  AuthControllers.resetPassword,
 );
 router.post(
   "/admin/change-password",
