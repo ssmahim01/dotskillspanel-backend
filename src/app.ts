@@ -17,7 +17,6 @@ app.use(express.urlencoded({extended: true}))
 app.use(cors({
      origin: [
         envVars.FRONTEND_URL,
-        "https://api.dotskillspanel.com",
         "http://localhost:3000",
     ],
     credentials: true

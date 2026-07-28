@@ -15,7 +15,7 @@ const moduleRoutes = [
     route: authRoutes,
   },
   {
-    path: "/lead",
+    path: "/leads",
     route: LeadRoutes,
   },
  
