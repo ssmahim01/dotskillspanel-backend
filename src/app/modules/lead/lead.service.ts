@@ -291,7 +291,7 @@ const addAttachment = async (
 
 const convertLead = async (
   leadId: string,
-  payload: { clientId?: string },
+  payload: any,
   decodedToken: JwtPayload,
 ) => {
   const lead = await assertLeadExists(leadId);

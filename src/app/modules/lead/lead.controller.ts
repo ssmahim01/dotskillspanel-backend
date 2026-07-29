@@ -180,11 +180,11 @@ const convertLead = catchAsync(
   async (req: Request, res: Response, _next: NextFunction) => {
     const leadId = req.params.id as string;
     const decodedToken = req.user as JwtPayload;
-    const { clientId } = req.body as { clientId?: string };
+    
 
     const result = await LeadServices.convertLead(
       leadId,
-      { clientId },
+      req.body,
       decodedToken,
     );
 
