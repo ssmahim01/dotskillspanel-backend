@@ -61,7 +61,7 @@ export const createUserValidationSchema = z
     phone: phoneSchema.optional(),
     avatar: z
       .string()
-      .url({ message: "Avatar must be a valid URL." })
+      
       .optional(),
     address: z
       .string()
@@ -92,8 +92,9 @@ export const updateUserValidationSchema = z
     phone: phoneSchema.optional(),
     avatar: z
       .string()
-      .url({ message: "Avatar must be a valid URL." })
+     
       .optional(),
+       role: z.nativeEnum(Role).optional(),
     address: z
       .string()
       .trim()

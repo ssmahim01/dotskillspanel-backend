@@ -36,7 +36,7 @@ router.patch(
 );
 
 router.post(
-  "/",
+  "/create",
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN),
   validateRequest(createUserValidationSchema),
   UserControllers.createUser,

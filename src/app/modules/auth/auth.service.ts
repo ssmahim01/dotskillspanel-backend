@@ -1,5 +1,5 @@
 import httpStatus from "http-status-codes";
-import { IUser } from "../user/user.interface";
+import { IUser, UserStatus } from "../user/user.interface";
 import { User } from "../user/user.model";
 import AppError from "../../errorHelpers/appError";
 import bcryptjs from "bcryptjs";
@@ -15,21 +15,38 @@ import { sendEmail } from "../../utils/sendEmail";
 const credentialsLogin = async (payload: Partial<IUser>) => {
   const { email, password } = payload;
 
- const isUserExist = await User.findOne({ email }).select("+password");
+  const isUserExist = await User.findOne({ email }).select("+password");
 
- 
- if (!isUserExist?.password) {
-  throw new AppError(
-    httpStatus.UNAUTHORIZED,
-    "Invalid email or password."
-  );
-}
-
- if (!isUserExist) {
+  if (!isUserExist) {
     throw new AppError(
       httpStatus.NOT_FOUND,
       "User does not exist! Please register.",
     );
+  }
+
+  if (isUserExist.isDeleted) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your account has been deleted. Please contact the administrator.",
+    );
+  }
+
+  if (isUserExist.status === UserStatus.INACTIVE) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your account is inactive. Please contact the administrator.",
+    );
+  }
+
+  if (isUserExist.status === UserStatus.SUSPENDED) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Your account has been suspended. Please contact the administrator.",
+    );
+  }
+
+  if (!isUserExist.password) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Invalid email or password.");
   }
 
   const isPasswordMatched = await bcryptjs.compare(
