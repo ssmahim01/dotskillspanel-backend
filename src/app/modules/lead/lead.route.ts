@@ -79,7 +79,7 @@ router.post(
 router.patch(
   "/:id/convert",
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER),
-  validateRequest(convertLeadValidationSchema),
+  // validateRequest(convertLeadValidationSchema),
   LeadControllers.convertLead,
 );
 
