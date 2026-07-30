@@ -46,6 +46,14 @@ export enum AttachmentType {
   OTHER = "OTHER",
 }
 
+export interface ILeadAttachment {
+  title: string;
+  url: string;
+  type: AttachmentType;
+  uploadedBy?: Types.ObjectId;
+  uploadedAt?: Date;
+}
+
 export interface IAttachment {
   _id?: Types.ObjectId;
   title: string;
@@ -97,7 +105,7 @@ export interface ILead {
   timeline?: string;
   technologies?: string[];
   services?: string[];
-  attachments?: IAttachment[];
+  attachments?: ILeadAttachment[];
   notes?: INote[];
 
   customFields?: Record<string, unknown>;

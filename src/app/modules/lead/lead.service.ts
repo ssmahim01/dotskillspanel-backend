@@ -303,7 +303,35 @@ const populateOptions = [
   { path: "updatedBy", select: "firstName lastName email" },
   { path: "convertedBy", select: "firstName lastName email" },
   { path: "notes.createdBy", select: "firstName lastName email" },
+   { path: "attachments.uploadedBy", select: "firstName lastName email" }, 
 ];
+
+const addAttachment = async (
+  leadId: string,
+  payload: { title: string; url: string; type?: string },
+  decodedToken: JwtPayload,
+) => {
+  await assertLeadExists(leadId);
+
+  const updatedLead = await Lead.findByIdAndUpdate(
+    leadId,
+    {
+      $push: {
+        attachments: {
+          title: payload.title,
+          url: payload.url,
+          type: payload.type,
+          uploadedBy: toObjectId(decodedToken.userId),
+          uploadedAt: new Date(),
+        },
+      },
+      updatedBy: toObjectId(decodedToken.userId),
+    },
+    { new: true, runValidators: true },
+  ).populate(populateOptions);
+
+  return { data: updatedLead };
+};
 
 const createLead = async (
   payload: Partial<ILead>,
@@ -478,31 +506,31 @@ const addNote = async (
   return { data: updatedLead };
 };
 
-const addAttachment = async (
-  leadId: string,
-  payload: { title: string; url: string; type?: string },
-  decodedToken: JwtPayload,
-) => {
-  await assertLeadExists(leadId);
+// const addAttachment = async (
+//   leadId: string,
+//   payload: { title: string; url: string; type?: string },
+//   decodedToken: JwtPayload,
+// ) => {
+//   await assertLeadExists(leadId);
 
-  const updatedLead = await Lead.findByIdAndUpdate(
-    leadId,
-    {
-      $push: {
-        attachments: {
-          title: payload.title,
-          url: payload.url,
-          type: payload.type,
-          uploadedAt: new Date(),
-        },
-      },
-      updatedBy: toObjectId(decodedToken.userId),
-    },
-    { new: true, runValidators: true },
-  ).populate(populateOptions);
+//   const updatedLead = await Lead.findByIdAndUpdate(
+//     leadId,
+//     {
+//       $push: {
+//         attachments: {
+//           title: payload.title,
+//           url: payload.url,
+//           type: payload.type,
+//           uploadedAt: new Date(),
+//         },
+//       },
+//       updatedBy: toObjectId(decodedToken.userId),
+//     },
+//     { new: true, runValidators: true },
+//   ).populate(populateOptions);
 
-  return { data: updatedLead };
-};
+//   return { data: updatedLead };
+// };
 
 const convertLead = async (
   leadId: string,

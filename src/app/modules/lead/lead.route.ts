@@ -20,7 +20,7 @@ const router = Router();
 router.post(
   "/create",
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.MARKETER),
-  validateRequest(createLeadValidationSchema),
+  // validateRequest(createLeadValidationSchema),
   LeadControllers.createLead,
 );
 
@@ -45,7 +45,7 @@ router.get(
 router.patch(
   "/:id",
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.MARKETER),
-  validateRequest(updateLeadValidationSchema),
+  // validateRequest(updateLeadValidationSchema),
   LeadControllers.updateLead,
 );
 

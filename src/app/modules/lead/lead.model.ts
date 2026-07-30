@@ -3,6 +3,7 @@ import {
   AttachmentType,
   IAttachment,
   ILead,
+  ILeadAttachment,
   INote,
   LeadPriority,
   LeadSource,
@@ -10,31 +11,42 @@ import {
   PreferredContactMethod,
 } from "./lead.interface";
 
-const attachmentSchema = new Schema<IAttachment>(
+const leadAttachmentSchema = new Schema<ILeadAttachment>(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      maxlength: 150,
-    },
-    url: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    type: {
-      type: String,
-      enum: Object.values(AttachmentType),
-      default: AttachmentType.OTHER,
-    },
-    uploadedAt: {
-      type: Date,
-      default: Date.now,
-    },
+    title: { type: String, required: false },
+    url: { type: String, required: false },
+    type: { type: String, enum: Object.values(AttachmentType), default: AttachmentType.OTHER },
+    uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
+    uploadedAt: { type: Date, default: Date.now },
   },
-  { _id: true, versionKey: false },
+  { _id: true },
 );
+
+// const attachmentSchema = new Schema<IAttachment>(
+//   {
+//     title: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//       maxlength: 150,
+//     },
+//     url: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+//     type: {
+//       type: String,
+//       enum: Object.values(AttachmentType),
+//       default: AttachmentType.OTHER,
+//     },
+//     uploadedAt: {
+//       type: Date,
+//       default: Date.now,
+//     },
+//   },
+//   { _id: true, versionKey: false },
+// );
 
 const noteSchema = new Schema<INote>(
   {
@@ -268,7 +280,8 @@ const leadSchema = new Schema<ILead>(
     },
 
     attachments: {
-      type: [attachmentSchema],
+      type: [leadAttachmentSchema],
+      required: false,
       default: [],
     },
 
