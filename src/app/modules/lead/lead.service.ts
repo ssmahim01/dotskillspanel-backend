@@ -1,14 +1,26 @@
 import httpStatus from "http-status-codes";
-import { Types } from "mongoose";
+import mongoose, { AnyBulkWriteOperation, Types } from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 
 import { ILead, LeadStatus } from "./lead.interface";
 import { Lead } from "./lead.model";
-import { leadSearchableFields } from "./lead.constants";
+import { leadSearchableFields, MAX_LEAD_IMPORT_ROWS } from "./lead.constants";
 import { User } from "../user/user.model";
 import { Role } from "../user/user.interface";
 import AppError from "../../errorHelpers/appError";
 import { QueryBuilder } from "../../utils/QueryBuilder";
+import { parseImportFile, validateImportedLead } from "./lead.import.utils";
+interface IImportSummary {
+  total: number;
+  imported: number;
+  duplicates: number;
+  failed: number;
+}
+
+interface IPreparedLead {
+  rowNumber: number;
+  data: Partial<ILead>;
+}
 
 const PROTECTED_FIELDS: (keyof ILead | string)[] = [
   "createdBy",
@@ -24,6 +36,200 @@ const PROTECTED_FIELDS: (keyof ILead | string)[] = [
   "notes",
   "_id",
 ];
+
+const validateImportFile = (file?: Express.Multer.File) => {
+  if (!file) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Please upload a CSV, XLS or XLSX file.",
+    );
+  }
+
+  const allowedMimeTypes = [
+    "text/csv",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ];
+
+  if (!allowedMimeTypes.includes(file.mimetype)) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Unsupported file format. Only CSV, XLS and XLSX files are allowed.",
+    );
+  }
+};
+
+const getDuplicateMaps = async (leads: Partial<ILead>[]) => {
+  const phones = leads
+    .map((lead) => lead.phone)
+    .filter((phone): phone is string => Boolean(phone));
+
+  const emails = leads
+    .map((lead) => lead.email)
+    .filter((email): email is string => Boolean(email));
+
+ const conditions = [];
+
+if (phones.length) {
+  conditions.push({ phone: { $in: phones } });
+}
+
+if (emails.length) {
+  conditions.push({ email: { $in: emails } });
+}
+
+if (!conditions.length) {
+  return {
+    phoneSet: new Set<string>(),
+    emailSet: new Set<string>(),
+  };
+}
+
+const existingLeads = await Lead.find({
+  isDeleted: false,
+  $or: conditions,
+})
+  .select("phone email")
+  .lean();
+
+  const phoneSet = new Set(
+    existingLeads.map((item) => item.phone).filter(Boolean),
+  );
+
+  const emailSet = new Set(
+    existingLeads.map((item) => item.email).filter(Boolean),
+  );
+
+  return {
+    phoneSet,
+    emailSet,
+  };
+};
+
+const importLeads = async (
+  file: Express.Multer.File,
+  decodedToken: JwtPayload,
+) => {
+  validateImportFile(file);
+
+  const importedRows = parseImportFile(file.buffer);
+
+  const summary: IImportSummary = {
+    total: importedRows.length,
+    imported: 0,
+    duplicates: 0,
+    failed: 0,
+  };
+
+
+  if (importedRows.length > MAX_LEAD_IMPORT_ROWS) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Maximum ${MAX_LEAD_IMPORT_ROWS} leads can be imported at once.`,
+    );
+  }
+
+  if (!importedRows.length) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "The uploaded file contains no data.",
+    );
+  }
+
+  const duplicateMaps = await getDuplicateMaps(importedRows);
+
+  const operations: AnyBulkWriteOperation<ILead>[] = [];
+
+  const preparedLeads: IPreparedLead[] = importedRows.map((lead, index) => ({
+    rowNumber: index + 2,
+    data: lead,
+  }));
+
+  const importedPhoneSet = new Set<string>();
+  const importedEmailSet = new Set<string>();
+
+  for (const lead of preparedLeads) {
+    const errors = validateImportedLead(lead.data);
+
+    if (errors.length) {
+      summary.failed++;
+      continue;
+    }
+
+    const phone = lead.data.phone;
+    const email = lead.data.email;
+
+    if (phone) {
+      if (duplicateMaps.phoneSet.has(phone) || importedPhoneSet.has(phone)) {
+        summary.duplicates++;
+        continue;
+      }
+    }
+
+    if (email) {
+      if (duplicateMaps.emailSet.has(email) || importedEmailSet.has(email)) {
+        summary.duplicates++;
+        continue;
+      }
+    }
+
+    const isPhoneDuplicate =
+      !!phone &&
+      (duplicateMaps.phoneSet.has(phone) || importedPhoneSet.has(phone));
+
+    const isEmailDuplicate =
+      !!email &&
+      (duplicateMaps.emailSet.has(email) || importedEmailSet.has(email));
+
+    if (isPhoneDuplicate || isEmailDuplicate) {
+      summary.duplicates++;
+      continue;
+    }
+
+    operations.push({
+      insertOne: {
+        document: {
+          ...lead.data,
+          createdBy: toObjectId(decodedToken.userId),
+          updatedBy: toObjectId(decodedToken.userId),
+        } as ILead,
+      },
+    });
+  }
+
+  if (!operations.length) {
+    return {
+      total: summary.total,
+      imported: 0,
+      duplicates: summary.duplicates,
+      failed: summary.failed,
+    };
+  }
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    await Lead.bulkWrite(operations, {
+      ordered: false,
+      session,
+    });
+
+    await session.commitTransaction();
+
+    summary.imported = operations.length;
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+
+  return {
+    data: summary,
+  };
+};
 
 const stripProtectedFields = <T extends Record<string, any>>(
   payload: T,
@@ -99,7 +305,10 @@ const populateOptions = [
   { path: "notes.createdBy", select: "firstName lastName email" },
 ];
 
-const createLead = async (payload: Partial<ILead>, decodedToken: JwtPayload) => {
+const createLead = async (
+  payload: Partial<ILead>,
+  decodedToken: JwtPayload,
+) => {
   if (payload.assignedTo) {
     await assertAssigneeExists(payload.assignedTo as unknown as string);
   }
@@ -121,7 +330,10 @@ const getLeads = async (query: Record<string, string>) => {
     baseFilter.createdAt = dateFilter;
   }
 
-  const queryBuilder = new QueryBuilder(Lead.find(baseFilter), sanitizeQuery(query));
+  const queryBuilder = new QueryBuilder(
+    Lead.find(baseFilter),
+    sanitizeQuery(query),
+  );
 
   const leadsQuery = queryBuilder
     .filter()
@@ -147,7 +359,10 @@ const getDeletedLeads = async (query: Record<string, string>) => {
     baseFilter.createdAt = dateFilter;
   }
 
-  const queryBuilder = new QueryBuilder(Lead.find(baseFilter), sanitizeQuery(query));
+  const queryBuilder = new QueryBuilder(
+    Lead.find(baseFilter),
+    sanitizeQuery(query),
+  );
 
   const leadsQuery = queryBuilder
     .filter()
@@ -176,7 +391,7 @@ const getLeadById = async (id: string) => {
   }
 
   return { data: lead };
-}; 
+};
 
 const updateLead = async (
   leadId: string,
@@ -397,6 +612,7 @@ export const LeadServices = {
   addAttachment,
   convertLead,
   softDeleteLead,
+  importLeads,
   restoreLead,
   permanentlyDeleteLead,
 };

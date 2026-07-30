@@ -19,3 +19,5 @@ export const leadFilterableFields = [
   "createdBy",
   "isConverted",
 ];
+
+export const MAX_LEAD_IMPORT_ROWS = 10000;

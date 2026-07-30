@@ -13,6 +13,7 @@ import {
   updateLeadStatusValidationSchema,
   updateLeadValidationSchema,
 } from "./lead.validation";
+import { upload } from "../../middlewares/upload";
 
 const router = Router();
 
@@ -74,6 +75,18 @@ router.post(
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.MARKETER),
   validateRequest(addAttachmentValidationSchema),
   LeadControllers.addAttachment,
+);
+
+router.post(
+  "/import",
+  checkAuth(
+    Role.SUPER_ADMIN,
+    Role.ADMIN,
+    Role.MANAGER,
+    Role.STAFF,
+  ),
+  upload.single("file"),
+  LeadControllers.importLeads,
 );
 
 router.patch(

@@ -5,7 +5,9 @@ import { JwtPayload } from "jsonwebtoken";
 import { LeadServices } from "./lead.service";
 import { ILead, LeadStatus } from "./lead.interface";
 import { sendResponse } from "../../utils/sendResponse";
+
 import { catchAsync } from "../../utils/catchAsync";
+import AppError from "../../errorHelpers/appError";
 
 const createLead = catchAsync(
   async (req: Request, res: Response, _next: NextFunction) => {
@@ -24,6 +26,27 @@ const createLead = catchAsync(
     });
   },
 );
+
+const importLeads = catchAsync(async (req, res) => {
+  if (!req.file) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Please upload a CSV, XLS or XLSX file.",
+    );
+  }
+
+  const result = await LeadServices.importLeads(
+    req.file,
+    req.user as JwtPayload,
+  );
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: `Successfully imported ${result?.data?.imported} lead(s).`,
+    data: result.data,
+  });
+});
 
 const getLeads = catchAsync(
   async (req: Request, res: Response, _next: NextFunction) => {
@@ -261,5 +284,6 @@ export const LeadControllers = {
   convertLead,
   softDeleteLead,
   restoreLead,
+  importLeads,
   permanentlyDeleteLead,
 };
