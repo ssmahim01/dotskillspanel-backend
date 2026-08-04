@@ -10,6 +10,8 @@ import { Role } from "../user/user.interface";
 import AppError from "../../errorHelpers/appError";
 import { QueryBuilder } from "../../utils/QueryBuilder";
 import { parseImportFile, validateImportedLead } from "./lead.import.utils";
+import { Client } from "../clients/client.model";
+import { ClientType } from "../clients/client.interface";
 interface IImportSummary {
   total: number;
   imported: number;
@@ -68,29 +70,29 @@ const getDuplicateMaps = async (leads: Partial<ILead>[]) => {
     .map((lead) => lead.email)
     .filter((email): email is string => Boolean(email));
 
- const conditions = [];
+  const conditions = [];
 
-if (phones.length) {
-  conditions.push({ phone: { $in: phones } });
-}
+  if (phones.length) {
+    conditions.push({ phone: { $in: phones } });
+  }
 
-if (emails.length) {
-  conditions.push({ email: { $in: emails } });
-}
+  if (emails.length) {
+    conditions.push({ email: { $in: emails } });
+  }
 
-if (!conditions.length) {
-  return {
-    phoneSet: new Set<string>(),
-    emailSet: new Set<string>(),
-  };
-}
+  if (!conditions.length) {
+    return {
+      phoneSet: new Set<string>(),
+      emailSet: new Set<string>(),
+    };
+  }
 
-const existingLeads = await Lead.find({
-  isDeleted: false,
-  $or: conditions,
-})
-  .select("phone email")
-  .lean();
+  const existingLeads = await Lead.find({
+    isDeleted: false,
+    $or: conditions,
+  })
+    .select("phone email")
+    .lean();
 
   const phoneSet = new Set(
     existingLeads.map((item) => item.phone).filter(Boolean),
@@ -120,7 +122,6 @@ const importLeads = async (
     duplicates: 0,
     failed: 0,
   };
-
 
   if (importedRows.length > MAX_LEAD_IMPORT_ROWS) {
     throw new AppError(
@@ -303,7 +304,7 @@ const populateOptions = [
   { path: "updatedBy", select: "firstName lastName email" },
   { path: "convertedBy", select: "firstName lastName email" },
   { path: "notes.createdBy", select: "firstName lastName email" },
-   { path: "attachments.uploadedBy", select: "firstName lastName email" }, 
+  { path: "attachments.uploadedBy", select: "firstName lastName email" },
 ];
 
 const addAttachment = async (
@@ -546,24 +547,99 @@ const convertLead = async (
     );
   }
 
-  if (payload.clientId) {
-    assertValidObjectId(payload.clientId, "clientId");
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+  const createdClient = new Client({
+  leadId: lead._id,
+
+  assignedManager: lead.assignedTo,
+  accountManager: lead.assignedTo,
+
+  clientType: lead.company
+    ? ClientType.COMPANY
+    : ClientType.INDIVIDUAL,
+
+  companyName: lead.company,
+  companyWebsite: lead.website,
+  industry: lead.industry,
+  companySize: lead.employeeSize,
+
+  firstName: lead.firstName,
+  lastName: lead.lastName,
+  fullName: lead.fullName,
+
+  email: lead.email,
+  phone: lead.phone,
+  alternatePhone: lead.alternatePhone,
+
+  country: lead.country,
+  state: lead.state,
+  city: lead.city,
+  zipCode: lead.zipCode,
+  address: lead.address,
+
+  preferredContactMethod: lead.preferredContactMethod,
+
+  estimatedValue: lead.estimatedValue,
+  budget: lead.budget,
+  timeline: lead.timeline,
+
+  requirementTitle: lead.requirementTitle,
+  requirementDescription: lead.requirementDescription,
+
+  technologies: lead.technologies,
+  services: lead.services,
+
+  tags: lead.tags,
+  labels: lead.labels,
+
+  customFields: lead.customFields,
+
+  joinedAt: new Date(),
+  lastContactAt: new Date(),
+
+  clientCode: `CLI-${Date.now()}`,
+
+  createdBy: toObjectId(decodedToken.userId),
+  updatedBy: toObjectId(decodedToken.userId),
+});
+
+await createdClient.save({ session });
+
+   const updatedLead = await Lead.findByIdAndUpdate(
+  leadId,
+  {
+    isConverted: true,
+    convertedAt: new Date(),
+    convertedBy: toObjectId(decodedToken.userId),
+
+    clientId: createdClient._id,
+
+    status: LeadStatus.WON,
+
+    updatedBy: toObjectId(decodedToken.userId),
+  },
+  {
+    new: true,
+    runValidators: true,
+    session,
+  },
+).populate(populateOptions);
+
+    await session.commitTransaction();
+
+    return {
+      data: updatedLead,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
   }
-
-  const updatedLead = await Lead.findByIdAndUpdate(
-    leadId,
-    {
-      isConverted: true,
-      convertedAt: new Date(),
-      convertedBy: toObjectId(decodedToken.userId),
-      clientId: payload.clientId ? toObjectId(payload.clientId) : undefined,
-      status: LeadStatus.WON,
-      updatedBy: toObjectId(decodedToken.userId),
-    },
-    { new: true, runValidators: true },
-  ).populate(populateOptions);
-
-  return { data: updatedLead };
 };
 
 const softDeleteLead = async (leadId: string, decodedToken: JwtPayload) => {
