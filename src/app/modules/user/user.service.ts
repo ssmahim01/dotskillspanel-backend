@@ -16,7 +16,6 @@ import {
 
 const PROTECTED_FIELDS: (keyof IUser | string)[] = [
   "password",
-  "role",
   "permissions",
   "status",
   "isVerified",
@@ -232,6 +231,12 @@ const updateUser = async (
   decodedToken: JwtPayload,
 ) => {
   await assertUserExists(userId);
+  if (payload.role && decodedToken.role !== Role.SUPER_ADMIN) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      "Only Super Admin can change roles.",
+    );
+  }
 
   const sanitizedPayload = stripProtectedFields(payload);
 

@@ -9,116 +9,121 @@ const objectId = z
   })
   .regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId.");
 
-export const createClientValidationSchema = z.object({
- 
-    leadId: objectId.optional(),
+const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:\+880|880|0)?1[3-9]\d{8}$/, "Invalid phone number.")
+  .optional()
+  .or(z.literal(""));
 
-    accountManager: objectId.optional(),
+const emailSchema = z
+  .string()
+  .trim()
+  .email("Invalid email address.")
+  .optional()
+  .or(z.literal(""));
 
-    clientType: z.nativeEnum(ClientType).optional(),
+const clientBaseSchema = {
+  leadId: objectId.optional(),
 
-    companyName: z.string().trim().optional(),
+  accountManager: objectId.optional(),
 
-    companyWebsite: z
-      .string()
-      .trim()
-      .url("Please provide a valid website URL.")
-      .optional(),
+  clientType: z.nativeEnum(ClientType).optional(),
 
-    industry: z.string().trim().optional(),
+  firstName: z.string().trim().max(100).optional(),
 
-    companySize: z.string().trim().optional(),
+  lastName: z.string().trim().max(100).optional(),
 
-    taxId: z.string().trim().optional(),
+  fullName: z.string().trim().max(200).optional(),
 
-    clientCode: z.string().trim().min(1).optional(),
+  email: emailSchema,
 
-    status: z.nativeEnum(ClientStatus).optional(),
+  phone: phoneSchema,
 
-    joinedAt: z.string().datetime().optional(),
+  alternatePhone: phoneSchema,
 
-    lastContactAt: z.string().datetime().optional(),
+  companyName: z.string().trim().max(200).optional(),
 
-    nextFollowUp: z.string().datetime().optional(),
+  companyWebsite: z
+    .string()
+    .trim()
+    .url("Please provide a valid website URL.")
+    .optional()
+    .or(z.literal("")),
 
-    tags: z.array(z.string()).optional(),
+  industry: z.string().trim().max(100).optional(),
 
-    labels: z.array(z.string()).optional(),
+  companySize: z.string().trim().max(100).optional(),
 
-    customFields: z.record(z.any()).optional(),
-});
+  taxId: z.string().trim().max(100).optional(),
 
-export const updateClientValidationSchema = z.object({
-  body: z.object({
-    accountManager: objectId.optional(),
+  clientCode: z.string().trim().min(1).optional(),
 
-    clientType: z.nativeEnum(ClientType).optional(),
+  status: z.nativeEnum(ClientStatus).optional(),
 
-    companyName: z.string().trim().optional(),
+  country: z.string().trim().max(100).optional(),
 
-    companyWebsite: z
-      .string()
-      .trim()
-      .url("Please provide a valid website URL.")
-      .optional(),
+  state: z.string().trim().max(100).optional(),
 
-    industry: z.string().trim().optional(),
+  city: z.string().trim().max(100).optional(),
 
-    companySize: z.string().trim().optional(),
+  zipCode: z.string().trim().max(30).optional(),
 
-    taxId: z.string().trim().optional(),
+  address: z.string().trim().max(500).optional(),
 
-    status: z.nativeEnum(ClientStatus).optional(),
+  preferredContactMethod: z.string().trim().max(100).optional(),
 
-    joinedAt: z.string().datetime().optional(),
+  estimatedValue: z.coerce.number().min(0).optional(),
 
-    lastContactAt: z.string().datetime().optional(),
+  budget: z.coerce.number().min(0).optional(),
 
-    nextFollowUp: z.string().datetime().optional(),
+  timeline: z.string().trim().max(200).optional(),
 
-    tags: z.array(z.string()).optional(),
+  requirementTitle: z.string().trim().max(200).optional(),
 
-    labels: z.array(z.string()).optional(),
+  requirementDescription: z.string().trim().max(5000).optional(),
 
-    customFields: z.record(z.any()).optional(),
-  }),
-});
+  technologies: z.array(z.string()).optional(),
+
+  services: z.array(z.string()).optional(),
+
+  joinedAt: z.string().datetime().optional(),
+
+  lastContactAt: z.string().datetime().optional(),
+
+  nextFollowUp: z.string().datetime().optional(),
+
+  tags: z.array(z.string()).optional(),
+
+  labels: z.array(z.string()).optional(),
+
+  customFields: z.record(z.any()).optional(),
+};
+
+export const createClientValidationSchema = z.object(clientBaseSchema);
+
+export const updateClientValidationSchema = z.object(clientBaseSchema);
 
 export const addClientNoteValidationSchema = z.object({
- 
-    message: z
-      .string()
-      .trim()
-      .min(1, "Note message is required.")
-      .max(5000, "Note cannot exceed 5000 characters."),
+  message: z
+    .string()
+    .trim()
+    .min(1, "Note message is required.")
+    .max(5000, "Note cannot exceed 5000 characters."),
 });
 
 export const addClientDocumentValidationSchema = z.object({
-  body: z.object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "Document title is required."),
+  title: z.string().trim().min(1, "Document title is required."),
 
-    url: z
-      .string()
-      .trim()
-      .url("Please provide a valid document URL."),
+  url: z.string().trim().url("Please provide a valid document URL."),
 
-    type: z
-      .nativeEnum(ClientDocumentType)
-      .optional(),
-  }),
+  type: z.nativeEnum(ClientDocumentType).optional(),
 });
 
 export const assignClientManagerValidationSchema = z.object({
-  body: z.object({
-    accountManager: objectId,
-  }),
+  accountManager: objectId,
 });
 
 export const updateClientStatusValidationSchema = z.object({
-  body: z.object({
-    status: z.nativeEnum(ClientStatus),
-  }),
+  status: z.nativeEnum(ClientStatus),
 });

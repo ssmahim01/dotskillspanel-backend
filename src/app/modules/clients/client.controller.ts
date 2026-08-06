@@ -9,11 +9,7 @@ import { ClientServices } from "./client.service";
 import { ClientStatus, IClient } from "./client.interface";
 
 const createClient = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
     const result = await ClientServices.createClient(
@@ -30,32 +26,8 @@ const createClient = catchAsync(
   },
 );
 
-const getClients = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
-    const result = await ClientServices.getClients(
-      req.query as Record<string, string>,
-    );
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Clients retrieved successfully.",
-      data: result.data,
-      meta: result.meta,
-    });
-  },
-);
-
 const getDeletedClients = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const result = await ClientServices.getDeletedClients(
       req.query as Record<string, string>,
     );
@@ -70,15 +42,25 @@ const getDeletedClients = catchAsync(
   },
 );
 
-const getClientById = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
-    const result = await ClientServices.getClientById(
-      req.params.id as string,
+const getClients = catchAsync(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await ClientServices.getClients(
+      req.query as Record<string, string>,
     );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Clients retrieved successfully.",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
+const getClientById = catchAsync(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const result = await ClientServices.getClientById(req.params.id as string);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -90,11 +72,7 @@ const getClientById = catchAsync(
 );
 
 const updateClient = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
     const result = await ClientServices.updateClient(
@@ -113,19 +91,14 @@ const updateClient = catchAsync(
 );
 
 const updateClientStatus = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
-    const result =
-      await ClientServices.updateClientStatus(
-        req.params.id as string,
-        req.body.status as ClientStatus,
-        decodedToken,
-      );
+    const result = await ClientServices.updateClientStatus(
+      req.params.id as string,
+      req.body.status as ClientStatus,
+      decodedToken,
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -137,19 +110,14 @@ const updateClientStatus = catchAsync(
 );
 
 const assignClientManager = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
-    const result =
-      await ClientServices.assignClientManager(
-        req.params.id as string,
-        req.body.accountManager,
-        decodedToken,
-      );
+    const result = await ClientServices.assignClientManager(
+      req.params.id as string,
+      req.body.accountManager,
+      decodedToken,
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -161,11 +129,7 @@ const assignClientManager = catchAsync(
 );
 
 const addNote = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
     const result = await ClientServices.addNote(
@@ -184,11 +148,7 @@ const addNote = catchAsync(
 );
 
 const addDocument = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
     const result = await ClientServices.addDocument(
@@ -207,18 +167,13 @@ const addDocument = catchAsync(
 );
 
 const softDeleteClient = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
-    const result =
-      await ClientServices.softDeleteClient(
-        req.params.id as string,
-        decodedToken,
-      );
+    const result = await ClientServices.softDeleteClient(
+      req.params.id as string,
+      decodedToken,
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
@@ -230,11 +185,7 @@ const softDeleteClient = catchAsync(
 );
 
 const restoreClient = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
     const result = await ClientServices.restoreClient(
@@ -252,24 +203,18 @@ const restoreClient = catchAsync(
 );
 
 const permanentlyDeleteClient = catchAsync(
-  async (
-    req: Request,
-    res: Response,
-    _next: NextFunction,
-  ) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
 
-    const result =
-      await ClientServices.permanentlyDeleteClient(
-        req.params.id as string,
-        decodedToken,
-      );
+    const result = await ClientServices.permanentlyDeleteClient(
+      req.params.id as string,
+      decodedToken,
+    );
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message:
-        "Client permanently deleted successfully.",
+      message: "Client permanently deleted successfully.",
       data: result.data,
     });
   },
@@ -288,7 +233,6 @@ export const ClientControllers = {
 
   addNote,
   addDocument,
-
   softDeleteClient,
   restoreClient,
   permanentlyDeleteClient,

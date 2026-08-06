@@ -19,6 +19,26 @@ export interface IClient {
   leadId: Types.ObjectId;
 
   clientType: ClientType;
+  firstName?: string;
+  lastName?: string;
+  fullName?: string;
+
+  email?: string;
+  phone?: string;
+  alternatePhone?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  zipCode?: string;
+  address?: string;
+  preferredContactMethod?: string;
+  estimatedValue?: number;
+  budget?: number;
+  timeline?: string;
+  requirementTitle?: string;
+  requirementDescription?: string;
+  technologies?: string[];
+  services?: string[];
 
   companyName?: string;
 
