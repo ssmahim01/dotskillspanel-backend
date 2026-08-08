@@ -11,6 +11,12 @@ export enum LeadStatus {
   LOST = "LOST",
 }
 
+export enum LeadContactStatus {
+  NO_RESPONSE = "NO_RESPONSE",
+  BUSY = "BUSY",
+  NEXT_CONTACT = "NEXT_CONTACT",
+}
+
 export enum LeadPriority {
   LOW = "LOW",
   MEDIUM = "MEDIUM",
@@ -89,10 +95,13 @@ export interface ILead {
   address?: string;
   source: LeadSource;
   status: LeadStatus;
+    contactStatus?: LeadContactStatus;
+  nextContactAt?: Date;
   priority: LeadPriority;
   pipelineStage?: string;
   estimatedValue?: number;
   expectedCloseDate?: Date;
+  location?: string;
   assignedTo?: Types.ObjectId;
   createdBy?: Types.ObjectId;
   updatedBy?: Types.ObjectId;

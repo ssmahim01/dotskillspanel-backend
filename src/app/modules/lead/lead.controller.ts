@@ -3,7 +3,7 @@ import httpStatus from "http-status-codes";
 import { JwtPayload } from "jsonwebtoken";
 
 import { LeadServices } from "./lead.service";
-import { ILead, LeadStatus } from "./lead.interface";
+import { ILead, LeadContactStatus, LeadStatus } from "./lead.interface";
 import { sendResponse } from "../../utils/sendResponse";
 
 import { catchAsync } from "../../utils/catchAsync";
@@ -131,6 +131,28 @@ const updateLeadStatus = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "Lead status updated successfully.",
+      data: result.data,
+    });
+  },
+);
+
+const updateLeadContactStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const { leadId } = req.params;
+
+    const { contactStatus, nextContactAt } = req.body;
+
+    const result = await LeadServices.updateLeadContactStatus(
+      leadId as string,
+      contactStatus as LeadContactStatus,
+      nextContactAt,
+      req.user,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Lead contact status updated successfully.",
       data: result.data,
     });
   },
@@ -278,6 +300,7 @@ export const LeadControllers = {
   getLeadById,
   updateLead,
   updateLeadStatus,
+  updateLeadContactStatus,
   assignLead,
   addNote,
   addAttachment,

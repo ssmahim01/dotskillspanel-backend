@@ -10,6 +10,7 @@ import {
   assignLeadValidationSchema,
   convertLeadValidationSchema,
   createLeadValidationSchema,
+  updateLeadContactStatusValidationSchema,
   updateLeadStatusValidationSchema,
   updateLeadValidationSchema,
 } from "./lead.validation";
@@ -57,6 +58,13 @@ router.patch(
 );
 
 router.patch(
+  "/:leadId/contact-status",
+  checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.MARKETER),
+  validateRequest(updateLeadContactStatusValidationSchema as any),
+  LeadControllers.updateLeadContactStatus,
+);
+
+router.patch(
   "/:id/assign",
   checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER),
   validateRequest(assignLeadValidationSchema),
@@ -79,12 +87,7 @@ router.post(
 
 router.post(
   "/import",
-  checkAuth(
-    Role.SUPER_ADMIN,
-    Role.ADMIN,
-    Role.MANAGER,
-    Role.STAFF,
-  ),
+  checkAuth(Role.SUPER_ADMIN, Role.ADMIN, Role.MANAGER, Role.STAFF),
   upload.single("file"),
   LeadControllers.importLeads,
 );

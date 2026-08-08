@@ -2,7 +2,7 @@ import httpStatus from "http-status-codes";
 import mongoose, { AnyBulkWriteOperation, Types } from "mongoose";
 import { JwtPayload } from "jsonwebtoken";
 
-import { ILead, LeadStatus } from "./lead.interface";
+import { ILead, LeadContactStatus, LeadStatus } from "./lead.interface";
 import { Lead } from "./lead.model";
 import { leadSearchableFields, MAX_LEAD_IMPORT_ROWS } from "./lead.constants";
 import { User } from "../user/user.model";
@@ -462,6 +462,60 @@ const updateLeadStatus = async (
   return { data: updatedLead };
 };
 
+const updateLeadContactStatus = async (
+  leadId: string,
+  contactStatus: LeadContactStatus,
+  nextContactAt: Date | undefined,
+  decodedToken: JwtPayload,
+) => {
+  await assertLeadExists(leadId);
+
+  if (contactStatus === LeadContactStatus.NEXT_CONTACT) {
+    if (!nextContactAt) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Next contact date and time are required.",
+      );
+    }
+
+    if (new Date(nextContactAt).getTime() <= Date.now()) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Next contact time must be in the future.",
+      );
+    }
+  }
+
+  const normalizedNextContactAt =
+    contactStatus === LeadContactStatus.NEXT_CONTACT
+      ? new Date(nextContactAt!)
+      : null;
+
+  const updatedLead = await Lead.findByIdAndUpdate(
+    leadId,
+    {
+      contactStatus,
+      nextContactAt: normalizedNextContactAt,
+      updatedBy: toObjectId(decodedToken.userId),
+    },
+    {
+      new: true,
+      runValidators: true,
+    },
+  ).populate(populateOptions);
+
+  if (!updatedLead) {
+    throw new AppError(
+      httpStatus.NOT_FOUND,
+      "Lead not found.",
+    );
+  }
+
+  return {
+    data: updatedLead,
+  };
+};
+
 const assignLead = async (
   leadId: string,
   assignedTo: string,
@@ -711,6 +765,7 @@ export const LeadServices = {
   getLeadById,
   updateLead,
   updateLeadStatus,
+  updateLeadContactStatus,
   assignLead,
   addNote,
   addAttachment,

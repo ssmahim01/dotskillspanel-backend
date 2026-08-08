@@ -5,6 +5,7 @@ import {
   ILead,
   ILeadAttachment,
   INote,
+  LeadContactStatus,
   LeadPriority,
   LeadSource,
   LeadStatus,
@@ -15,7 +16,11 @@ const leadAttachmentSchema = new Schema<ILeadAttachment>(
   {
     title: { type: String, required: false },
     url: { type: String, required: false },
-    type: { type: String, enum: Object.values(AttachmentType), default: AttachmentType.OTHER },
+    type: {
+      type: String,
+      enum: Object.values(AttachmentType),
+      default: AttachmentType.OTHER,
+    },
     uploadedBy: { type: Schema.Types.ObjectId, ref: "User" },
     uploadedAt: { type: Date, default: Date.now },
   },
@@ -183,6 +188,24 @@ const leadSchema = new Schema<ILead>(
       default: LeadStatus.NEW,
       index: true,
     },
+    contactStatus: {
+      type: String,
+      enum: Object.values(LeadContactStatus),
+      default: null,
+      index: true,
+    },
+
+    nextContactAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: "",
+      index: true,
+    },
 
     priority: {
       type: String,
@@ -314,7 +337,7 @@ const leadSchema = new Schema<ILead>(
 
     clientId: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Client",
       default: null,
     },
 
@@ -349,6 +372,16 @@ leadSchema.set("toJSON", { virtuals: true });
 leadSchema.set("toObject", { virtuals: true });
 
 leadSchema.index({ status: 1, priority: 1 });
+leadSchema.index({
+  contactStatus: 1,
+  nextContactAt: 1,
+});
+
+leadSchema.index({
+  assignedTo: 1,
+  contactStatus: 1,
+  nextContactAt: 1,
+});
 leadSchema.index({ assignedTo: 1, status: 1 });
 leadSchema.index({ isDeleted: 1, isConverted: 1 });
 leadSchema.index({ createdAt: -1 });
