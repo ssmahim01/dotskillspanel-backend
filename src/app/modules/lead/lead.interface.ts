@@ -16,6 +16,7 @@ export enum LeadContactStatus {
   NO_RESPONSE = "NO_RESPONSE",
   BUSY = "BUSY",
   NEXT_CONTACT = "NEXT_CONTACT",
+  PHONE_OFF = "PHONE_OFF",
 }
 
 export enum LeadPriority {
