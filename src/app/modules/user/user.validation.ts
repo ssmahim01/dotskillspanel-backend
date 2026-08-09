@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { Role, UserStatus } from "./user.interface";
+import { Gender, PaymentMethod, Role, UserStatus } from "./user.interface";
 import { PERMISSIONS, Permission } from "./permissions/permissions.constant";
 import { Types } from "mongoose";
 
@@ -39,6 +39,13 @@ export const phoneSchema = z
       "Phone number must be valid for Bangladesh. Format: +88XXXXXXXXX or 0XXXXXXXXX",
   });
 
+const genderValues = Object.values(Gender) as [Gender, ...Gender[]];
+
+const paymentMethodValues = Object.values(PaymentMethod) as [
+  PaymentMethod,
+  ...PaymentMethod[],
+];
+
 export const objectIdSchema = z
   .string({ invalid_type_error: "Id must be a string." })
   .refine((val) => Types.ObjectId.isValid(val), {
@@ -59,9 +66,43 @@ export const createUserValidationSchema = z
     email: emailSchema,
     password: passwordSchema,
     phone: phoneSchema.optional(),
+    gender: z.enum(genderValues).optional(),
+
+    dateOfBirth: z.coerce.date().optional(),
+
+    salary: z.coerce
+      .number({
+        invalid_type_error: "Salary must be a number.",
+      })
+      .min(0, "Salary cannot be negative.")
+      .optional(),
+
+    paymentMethod: z.enum(paymentMethodValues).optional(),
+
+    paymentAccount: z
+      .object({
+        accountHolderName: z.string().trim().min(2).max(100),
+
+        accountNumber: z.string().trim().min(5).max(50),
+      })
+      .optional(),
+
+    bankAccount: z
+      .object({
+        accountHolderName: z.string().trim().min(2).max(100),
+
+        accountNumber: z.string().trim().min(5).max(50),
+
+        bankName: z.string().trim().min(2).max(100),
+
+        branchName: z.string().trim().max(100).optional(),
+
+        routingNumber: z.string().trim().max(50).optional(),
+      })
+      .optional(),
     avatar: z
       .string()
-      
+
       .optional(),
     address: z
       .string()
@@ -92,13 +133,47 @@ export const updateUserValidationSchema = z
     phone: phoneSchema.optional(),
     avatar: z
       .string()
-     
+
       .optional(),
-       role: z.nativeEnum(Role).optional(),
+    role: z.nativeEnum(Role).optional(),
     address: z
       .string()
       .trim()
       .max(200, { message: "Address cannot exceed 200 characters." })
+      .optional(),
+    gender: z.enum(genderValues).optional(),
+
+    dateOfBirth: z.coerce.date().optional(),
+
+    salary: z.coerce
+      .number({
+        invalid_type_error: "Salary must be a number.",
+      })
+      .min(0, "Salary cannot be negative.")
+      .optional(),
+
+    paymentMethod: z.enum(paymentMethodValues).optional(),
+
+    paymentAccount: z
+      .object({
+        accountHolderName: z.string().trim().min(2).max(100),
+
+        accountNumber: z.string().trim().min(5).max(50),
+      })
+      .optional(),
+
+    bankAccount: z
+      .object({
+        accountHolderName: z.string().trim().min(2).max(100),
+
+        accountNumber: z.string().trim().min(5).max(50),
+
+        bankName: z.string().trim().min(2).max(100),
+
+        branchName: z.string().trim().max(100).optional(),
+
+        routingNumber: z.string().trim().max(50).optional(),
+      })
       .optional(),
     bio: z
       .string()

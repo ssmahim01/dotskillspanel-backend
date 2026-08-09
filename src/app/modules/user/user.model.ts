@@ -1,5 +1,11 @@
 import { model, Schema } from "mongoose";
-import { IUser, Role, UserStatus } from "./user.interface";
+import {
+  Gender,
+  IUser,
+  PaymentMethod,
+  Role,
+  UserStatus,
+} from "./user.interface";
 
 const userSchema = new Schema<IUser>(
   {
@@ -31,7 +37,7 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       required: true,
-      select: false, 
+      select: false,
     },
 
     phone: {
@@ -70,6 +76,62 @@ const userSchema = new Schema<IUser>(
       type: String,
       trim: true,
       default: "",
+    },
+    gender: {
+      type: String,
+      enum: Object.values(Gender),
+      default: null,
+    },
+
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
+
+    salary: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: Object.values(PaymentMethod),
+      default: PaymentMethod.CASH,
+    },
+
+    paymentAccount: {
+      accountHolderName: {
+        type: String,
+        trim: true,
+      },
+      accountNumber: {
+        type: String,
+        trim: true,
+      },
+    },
+
+    bankAccount: {
+      accountHolderName: {
+        type: String,
+        trim: true,
+      },
+      accountNumber: {
+        type: String,
+        trim: true,
+      },
+      bankName: {
+        type: String,
+        trim: true,
+      },
+      branchName: {
+        type: String,
+        trim: true,
+      },
+      routingNumber: {
+        type: String,
+        trim: true,
+      },
     },
 
     department: {

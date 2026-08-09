@@ -231,6 +231,7 @@ const updateUser = async (
   decodedToken: JwtPayload,
 ) => {
   await assertUserExists(userId);
+
   if (payload.role && decodedToken.role !== Role.SUPER_ADMIN) {
     throw new AppError(
       httpStatus.FORBIDDEN,
@@ -240,13 +241,34 @@ const updateUser = async (
 
   const sanitizedPayload = stripProtectedFields(payload);
 
+  if (sanitizedPayload.paymentMethod === "CASH") {
+    sanitizedPayload.paymentAccount = undefined;
+    sanitizedPayload.bankAccount = undefined;
+  }
+
+  if (
+    sanitizedPayload.paymentMethod === "BKASH" ||
+    sanitizedPayload.paymentMethod === "NAGAD"
+  ) {
+    sanitizedPayload.bankAccount = undefined;
+  }
+
+  if (sanitizedPayload.paymentMethod === "BANK") {
+    sanitizedPayload.paymentAccount = undefined;
+  }
+
   const updatedUser = await User.findByIdAndUpdate(
     userId,
     {
-      ...sanitizedPayload,
-      updatedBy: toObjectId(decodedToken.userId),
+      $set: {
+        ...sanitizedPayload,
+        updatedBy: toObjectId(decodedToken.userId),
+      },
     },
-    { new: true, runValidators: true },
+    {
+      returnDocument: "after",
+      runValidators: true,
+    },
   );
 
   return { data: updatedUser };

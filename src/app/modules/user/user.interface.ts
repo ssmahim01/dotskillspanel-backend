@@ -16,6 +16,33 @@ export enum UserStatus {
   SUSPENDED = "SUSPENDED",
 }
 
+export enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+  OTHER = "OTHER",
+  PREFER_NOT_TO_SAY = "PREFER_NOT_TO_SAY",
+}
+
+export enum PaymentMethod {
+  CASH = "CASH",
+  BKASH = "BKASH",
+  NAGAD = "NAGAD",
+  BANK = "BANK",
+}
+
+export interface IBankAccount {
+  accountHolderName: string;
+  accountNumber: string;
+  bankName: string;
+  branchName?: string;
+  routingNumber?: string;
+}
+
+export interface IPaymentAccount {
+  accountHolderName: string;
+  accountNumber: string;
+}
+
 export interface IUser {
   _id?: Types.ObjectId;
 
@@ -25,7 +52,17 @@ export interface IUser {
 
   email: string;
   password?: string;
+  gender?: Gender;
 
+  dateOfBirth?: Date;
+
+  salary?: number;
+
+  paymentMethod?: PaymentMethod;
+
+  paymentAccount?: IPaymentAccount;
+
+  bankAccount?: IBankAccount;
   phone?: string;
 
   avatar?: string;
